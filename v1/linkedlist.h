@@ -1,9 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-#ifndef LINKED_LIST
-#define LINIKED_LIST
+#ifndef LINKED_LIST_H__
+#define LINKED_LIST_H__
 
 typedef struct linkedlist ll;
 typedef struct command cmd;
@@ -12,6 +11,7 @@ struct command {
 	char* name;
 	char* args;
 	char* prompt;
+	char* desc;
 	int hasArgs;
 };
 
@@ -19,21 +19,31 @@ struct command {
 
 struct linkedlist {
 	ll *next;
-	struct command cmd;
+	cmd cmd;
 
 };
 
 
+cmd getCommand(void);
 
+cmd setupCommand(char* name, char* args, char* prompt, char* desc, int hasArgs);
 
-struct command getCommand();
+void delCommand(cmd c);
 
-void delCommand(struct command c);
+void printCommandWithEnum(cmd c, int count);
 
 ll *getLL();
 
-struct commmand getCmd(ll* commands, char* name);
+cmd getFromLL(ll* commands, char* name);
+
+cmd getIthFromLL(ll* commands, int i);
+
+int addCmd(ll* commands, cmd command);
 
 
-#endif
+void printWithEnumeration(ll* commands);
+
+
+
+#endif /* LINKED_LIST_H__ */
 
