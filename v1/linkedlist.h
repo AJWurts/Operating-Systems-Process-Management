@@ -28,9 +28,13 @@ cmd getCommand(void);
 
 cmd setupCommand(char* name, char* args, char* prompt, char* desc, int hasArgs);
 
+cmd setupUserCommand(char* name, char*prompt);
+
 void delCommand(cmd c);
 
 void printCommandWithEnum(cmd c, int count);
+
+int size(ll *linkedlist);
 
 ll *getLL();
 

@@ -5,8 +5,8 @@
 
 cmd getCommand(void) {
 	cmd c;
-	c.args = malloc(sizeof(char) * 100);
-	c.name = malloc(sizeof(char) * 100);
+	c.args = malloc(sizeof(char) * 128);
+	c.name = malloc(sizeof(char) * 128);
 	c.prompt = malloc(sizeof(char) * 100);
 	c.desc = malloc(sizeof(char) * 400);
 	return c;
@@ -22,6 +22,28 @@ cmd setupCommand(char* name, char* args, char* prompt, char* desc, int hasArgs) 
 	return c;
 }
 
+cmd setupUserCommand(char* name, char* prompt) {
+	cmd c = getCommand();
+
+	char* args = name;
+	int i = 0;
+	while (args++ != NULL) {
+		i++;
+		if (*args == ' ') {
+			args++;
+			break;
+
+		}
+
+	}
+	*(name + i) = 0;
+	strcpy(c.name, name);
+	c.prompt = prompt;
+	c.args = args;
+	c.desc = "User added command: ";
+	return c;
+}
+
 void delCommand(cmd c) {
 	free(c.args);
 	free(c.name);
@@ -33,6 +55,16 @@ void printCommandWithEnum(cmd c, int count) {
 	printf("%d. %s\t: %s\n", count, c.name, c.desc);
 }
 
+
+int size(ll *linkedlist) {
+	int size = 0;
+	ll *current = linkedlist;
+	while (current != NULL) {
+		size++;
+		current = current->next;
+	}
+	return size;
+}
 
 ll *getLL() {
 	ll *linkedlist = malloc(sizeof(ll));
@@ -57,7 +89,7 @@ cmd getIthFromLLHelper(ll* commands, int i, int count) {
 		if (i == count) {
 			return commands->cmd;
 		} else {
-			return getIthFromLLHelper(commands, i, ++count);
+			return getIthFromLLHelper(commands->next, i, ++count);
 		}
 	}
 	cmd c;
