@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
 	char* directory = malloc(sizeof(char) * 128);
 	directory = argv[0];
 	argv[0][strlen(argv[0]-5)] = 0;
+	printf("%s", input);
 
 	while (1) {
 		// hard coded - a, c, e, pwd
@@ -42,8 +43,11 @@ int main(int argc, char* argv[]) {
 		printf("Option?: ");
 
 
-		scanf("%s", input);
-		getchar();
+		char* done = fgets(input, sizeof input, stdin);
+		if (done == NULL) {
+			input[0] = 'e';
+		}
+
 		printf("\n");
 
 		if (48 <= input[0] && input[0] <= 57) {
@@ -75,12 +79,14 @@ int main(int argc, char* argv[]) {
 					break;
 				}
 				case 'e': {
+					printf("Logging you out, Commander.\n");
 					exit(0);
 					break;
 				}
 
 				default: {
 					printf("Invalid command please try again\n\n");
+					printf("%d", (int)input[0]);
 				}
 
 			}

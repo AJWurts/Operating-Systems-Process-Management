@@ -1,6 +1,7 @@
 - Background commands
-- accept input from arguments - half done need to implement it for user commands
+- accept input from arguments - done
 - statistics - Finito
 - move stats to separate file
 - move commands into a seperate file
 - fix how arguments are handled - Done
+- accept input from stdin- apparently super easy :D

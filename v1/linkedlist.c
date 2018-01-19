@@ -6,6 +6,8 @@ cmd getCommand(void) {
 	cmd c;
 	c.name = malloc(sizeof(char) * 128);
 	c.prompt = malloc(sizeof(char) * 100);
+	c.args = (char**)malloc(sizeof(char*) * 2);
+	c.args[1] = NULL;
 	c.desc = malloc(sizeof(char) * 400);
 	return c;
 }
@@ -13,6 +15,7 @@ cmd getCommand(void) {
 cmd setupCommand(char* name, char* prompt, char* desc) {
 	cmd c = getCommand();
 	c.name = name;
+	c.args[0] = name;
 	c.prompt = prompt;
 	c.desc = desc;
 	return c;
@@ -28,9 +31,7 @@ cmd setupUserCommand(char* name, char* prompt) {
 		if (*args == ' ') {
 			args++;
 			break;
-
 		}
-
 	}
 	*(name + i) = 0;
 	strcpy(c.name, name);
