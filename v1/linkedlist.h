@@ -30,6 +30,11 @@ cmd setupCommand(char* name, char* args, char* prompt, char* desc, int hasArgs);
 
 cmd setupUserCommand(char* name, char*prompt);
 
+cmd parseArgString(cmd command, char* args) {
+
+	return command;
+}
+
 void delCommand(cmd c);
 
 void printCommandWithEnum(cmd c, int count);

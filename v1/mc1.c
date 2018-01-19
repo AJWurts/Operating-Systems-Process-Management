@@ -7,14 +7,25 @@
 #include <sys/resource.h>
 #include "linkedlist.h"
 
+typedef struct __stats {
+	long prev_ru_minflt;
+	long prev_ru_majflt;
+	long current_minflt;
+	long current_majflt;
+	long time;
+} stats;
 int loadInitialCommands(ll*);
 void printCharacterCommands();
 long runCommand(cmd);
+stats *printStats(stats*);
+
 
 int main(int argc, char* argv[]) {
 	ll *commands = getLL();
 
 	loadInitialCommands(commands);
+	stats *cmdStats = malloc(sizeof(stats));
+	cmdStats->prev_ru_minflt = 0; cmdStats->prev_ru_majflt = 0;
 	char* input = malloc(sizeof(char) * 130);
 	char* directory = malloc(sizeof(char) * 128);
 	directory = argv[0];
@@ -39,7 +50,8 @@ int main(int argc, char* argv[]) {
 		if (48 <= input[0] && input[0] <= 57) {
 			int i = atoi(input);
 			cmd command = getIthFromLL(commands, i);
-			runCommand(command);
+			cmdStats->time = runCommand(command);
+			cmdStats = printStats(cmdStats);
 		} else {
 			switch (input[0]) {
 				case 'a': {
@@ -79,33 +91,60 @@ int main(int argc, char* argv[]) {
 }
 
 long runCommand(cmd command) {
+
 	struct timeval *startTime, *endTime;
 	startTime = malloc(sizeof(struct timeval));
 	endTime = malloc(sizeof(struct timeval));
 	long totalTime;
-	char* args[2];
-	args[0] = malloc(sizeof(char) * 128);
-	args[1] = malloc(sizeof(char) * 128);
-
+	char** args = (char**)malloc(sizeof(char*) * 128);
+	for (int i = 0; i < 128; i++) {
+		*(args + i) = (char*)malloc(sizeof(char) * 128);
+	}
 	if (!strcmp(command.name, "ls")) {
+
 		printf("\n-- Directory Listing --\n");
 		printf("Arguments?: ");
+		fgets(args[127], sizeof args[127], stdin);
+		if (*args[127] == '\n')
+			args[127] = NULL;
+		else {
+			*(args[127] + strlen(args[127]) - 1) = 0;
+			// Pull out every argument and place into args array
+			char cur;
+			char* buffer = malloc(sizeof(char*) * 128);
+			int indexInInput = 0;
+			int indexInBuffer = 0;
+			int indexInArgs = 2;
+			while (1) {
+				cur = args[127][indexInInput++];
+				if (cur == 32) {
+					args[indexInArgs++] = strdup(buffer);
+					indexInBuffer = 0;
+					for (int i = 0; i < 128; *(buffer++) = 0, i++);
+				} else if (cur == 0) {
+					args[indexInArgs] = strdup(buffer);
+					args[indexInArgs + 1] = NULL;
+					break;
+				} else {
+					buffer[indexInBuffer++] = cur;
+				}
+			}
+		}
+
+		printf("Path?: ");
 		fgets(args[0], sizeof args[0], stdin);
 		if (*args[0] == '\n')
-			*args[0] = ' ';
-		else
+				args[0] = NULL;
+		else {
 			*(args[0] + strlen(args[0]) - 1) = 0;
-		printf("Path?: ");
-		fgets(args[1], sizeof args[1], stdin);
-		if (*args[1] == '\n')
-				*args[1] = ' ';
-		else *(args[1] + strlen(args[1]) - 1) = 0;
+		}
+
 		//"%[^\n]%*c"
 		printf("\n\n");
 		// Concat inputed args tp create command args.
-		command.args = args[1];
-		strcat(command.args, " ");
-		strcat(command.args, args[0]);
+
+		command.args = args[0];
+
 	}
 
 	gettimeofday(startTime, NULL);
@@ -114,15 +153,14 @@ long runCommand(cmd command) {
 		fprintf(stderr, "fork failed\n");
 		exit(1);
 	} else if (ret == 0) {
-		args[0] = command.name;
 		args[1] = command.args;
+		args[0] = strdup(command.name);
 		printf("%s\n", command.prompt);
 		execvp(args[0], args);
-
 	} else {
 		wait(NULL);
-		printf("\n");
 		gettimeofday(endTime, NULL);
+		printf("\n");
 		totalTime = endTime->tv_usec - startTime->tv_usec;
 	}
 
@@ -134,6 +172,25 @@ void printCharacterCommands() {
 	printf("   c. change directory : Changes process working directory\n");
 	printf("   e. exit : Leave Mid-Day Commander\n");
 	printf("   p. pwd : Prints working directory\n");
+}
+
+stats *printStats(stats *cmdStats) {
+	struct rusage *usage;
+	usage = malloc(sizeof(struct rusage));
+
+	getrusage(RUSAGE_CHILDREN, usage);
+	cmdStats->current_minflt = usage->ru_minflt - cmdStats->prev_ru_minflt;
+	cmdStats->current_majflt = usage->ru_majflt - cmdStats->prev_ru_majflt;
+
+	cmdStats->prev_ru_minflt += cmdStats->current_minflt;
+	cmdStats->prev_ru_majflt += cmdStats->current_majflt;
+
+	printf("\n--- Statistics ---\n");
+	printf("Elapsed time: %lu millisecond(s)\n", cmdStats->time / 1000);
+	printf("Page Faults: %lu\n", cmdStats->current_majflt);
+	printf("Page Faults (reclaimed): %lu\n\n", cmdStats->current_minflt);
+	free(usage);
+	return cmdStats;
 }
 
 
@@ -148,7 +205,7 @@ int loadInitialCommands(ll *commands) {
 	didSucceed &= addCmd(commands, last);
 
 
-	cmd ls = setupCommand("ls", NULL, "-- Directory Listing --",
+	cmd ls = setupCommand("ls", " ", "-- Directory Listing --",
 			"Prints out the result of a listing on a user-specified path", 1);
 	didSucceed &= addCmd(commands, ls);
 

@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 
 
 	while (1) {
-		print("===== Mid-Day Commander, v0 =====");
+		printf("===== Mid-Day Commander, v0 =====");
 		printf("G'Day, Commander! What command would you like to run?\n");
 		printf("\t0. whoami\t Prints out the result of the whoami command\n");
 		printf("\t1. last\t Prints out the result of the last command\n");

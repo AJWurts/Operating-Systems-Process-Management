@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 cmd getCommand(void) {
 	cmd c;
 	c.args = malloc(sizeof(char) * 128);
