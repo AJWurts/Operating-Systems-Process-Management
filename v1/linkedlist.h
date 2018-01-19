@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifndef LINKED_LIST_H__
 #define LINKED_LIST_H__
@@ -9,10 +10,9 @@ typedef struct command cmd;
 
 struct command {
 	char* name;
-	char* args;
+	char** args;
 	char* prompt;
 	char* desc;
-	int hasArgs;
 };
 
 
@@ -26,14 +26,11 @@ struct linkedlist {
 
 cmd getCommand(void);
 
-cmd setupCommand(char* name, char* args, char* prompt, char* desc, int hasArgs);
+cmd setupCommand(char* name, char* prompt, char* desc);
 
-cmd setupUserCommand(char* name, char*prompt);
+cmd setupUserCommand(char* name, char* prompt);
 
-cmd parseArgString(cmd command, char* args) {
-
-	return command;
-}
+char **parseArgString(char* args);
 
 void delCommand(cmd c);
 

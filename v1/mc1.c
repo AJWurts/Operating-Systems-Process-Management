@@ -19,7 +19,6 @@ void printCharacterCommands();
 long runCommand(cmd);
 stats *printStats(stats*);
 
-
 int main(int argc, char* argv[]) {
 	ll *commands = getLL();
 
@@ -96,55 +95,38 @@ long runCommand(cmd command) {
 	startTime = malloc(sizeof(struct timeval));
 	endTime = malloc(sizeof(struct timeval));
 	long totalTime;
-	char** args = (char**)malloc(sizeof(char*) * 128);
-	for (int i = 0; i < 128; i++) {
-		*(args + i) = (char*)malloc(sizeof(char) * 128);
-	}
-	if (!strcmp(command.name, "ls")) {
 
+
+	if (!strcmp(command.name, "ls")) {
+		char *inputBuffer = malloc(sizeof(char) * 128);
+		char *argBuffer = malloc(sizeof(char) * 128);
 		printf("\n-- Directory Listing --\n");
 		printf("Arguments?: ");
-		fgets(args[127], sizeof args[127], stdin);
-		if (*args[127] == '\n')
-			args[127] = NULL;
+		fgets(inputBuffer, sizeof inputBuffer, stdin);
+		if (*inputBuffer == '\n')
+			inputBuffer = NULL;
 		else {
-			*(args[127] + strlen(args[127]) - 1) = 0;
-			// Pull out every argument and place into args array
-			char cur;
-			char* buffer = malloc(sizeof(char*) * 128);
-			int indexInInput = 0;
-			int indexInBuffer = 0;
-			int indexInArgs = 2;
-			while (1) {
-				cur = args[127][indexInInput++];
-				if (cur == 32) {
-					args[indexInArgs++] = strdup(buffer);
-					indexInBuffer = 0;
-					for (int i = 0; i < 128; *(buffer++) = 0, i++);
-				} else if (cur == 0) {
-					args[indexInArgs] = strdup(buffer);
-					args[indexInArgs + 1] = NULL;
-					break;
-				} else {
-					buffer[indexInBuffer++] = cur;
-				}
-			}
+			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+			strcat(argBuffer, inputBuffer);
 		}
 
 		printf("Path?: ");
-		fgets(args[0], sizeof args[0], stdin);
-		if (*args[0] == '\n')
-				args[0] = NULL;
+		fgets(inputBuffer, sizeof inputBuffer, stdin);
+		if (*inputBuffer == '\n')
+				inputBuffer = NULL;
 		else {
-			*(args[0] + strlen(args[0]) - 1) = 0;
+			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+			strcat(inputBuffer, " ");
+			strcat(inputBuffer, argBuffer);
+			free(argBuffer);
+			argBuffer = inputBuffer;
 		}
 
+		command.args = parseArgString(argBuffer);
+		command.args[0] = strdup(command.name);
 		//"%[^\n]%*c"
 		printf("\n\n");
 		// Concat inputed args tp create command args.
-
-		command.args = args[0];
-
 	}
 
 	gettimeofday(startTime, NULL);
@@ -153,10 +135,8 @@ long runCommand(cmd command) {
 		fprintf(stderr, "fork failed\n");
 		exit(1);
 	} else if (ret == 0) {
-		args[1] = command.args;
-		args[0] = strdup(command.name);
 		printf("%s\n", command.prompt);
-		execvp(args[0], args);
+		execvp(command.args[0], command.args);
 	} else {
 		wait(NULL);
 		gettimeofday(endTime, NULL);
@@ -193,22 +173,18 @@ stats *printStats(stats *cmdStats) {
 	return cmdStats;
 }
 
-
 int loadInitialCommands(ll *commands) {
-	cmd whoami = setupCommand("whoami", NULL, "-- Who am I? --",
-			"Prints out the result of the whoami command", 0);
+	cmd whoami = setupCommand("whoami", "-- Who am I? --",
+			"Prints out the result of the whoami command");
 	int didSucceed = addCmd(commands, whoami);
 
-
-	cmd last = setupCommand("last", NULL, "-- Last Logins --",
-			"Prints out the result of the last command", 0);
+	cmd last = setupCommand("last", "-- Last Logins --",
+			"Prints out the result of the last command");
 	didSucceed &= addCmd(commands, last);
 
-
-	cmd ls = setupCommand("ls", " ", "-- Directory Listing --",
-			"Prints out the result of a listing on a user-specified path", 1);
+	cmd ls = setupCommand("ls", "-- Directory Listing --",
+			"Prints out the result of a listing on a user-specified path");
 	didSucceed &= addCmd(commands, ls);
 
 	return didSucceed;
-
 }

@@ -4,20 +4,17 @@
 
 cmd getCommand(void) {
 	cmd c;
-	c.args = malloc(sizeof(char) * 128);
 	c.name = malloc(sizeof(char) * 128);
 	c.prompt = malloc(sizeof(char) * 100);
 	c.desc = malloc(sizeof(char) * 400);
 	return c;
 }
 
-cmd setupCommand(char* name, char* args, char* prompt, char* desc, int hasArgs) {
+cmd setupCommand(char* name, char* prompt, char* desc) {
 	cmd c = getCommand();
 	c.name = name;
-	c.args = args;
 	c.prompt = prompt;
 	c.desc = desc;
-	c.hasArgs = hasArgs;
 	return c;
 }
 
@@ -38,16 +35,39 @@ cmd setupUserCommand(char* name, char* prompt) {
 	*(name + i) = 0;
 	strcpy(c.name, name);
 	c.prompt = prompt;
-	c.args = args;
+	c.args = parseArgString(args);
+	c.args[0] = strdup(c.name);
 	c.desc = "User added command: ";
 	return c;
 }
 
-void delCommand(cmd c) {
-	free(c.args);
-	free(c.name);
-	free(c.prompt);
-	free(c.desc);
+char **parseArgString(char* args) {
+	// Goes through a string and puts every arg separated by spaces into its own place in a new char**
+	char **newArgs = (char**)malloc(sizeof(char*) * 20);
+	int newArgsSize = 20;
+	char cur;
+	char* buffer = malloc(sizeof(char*) * 128);
+	int indexInInput = 0;
+	int indexInBuffer = 0;
+	int indexInArgs = 1;
+	while (1) {
+		cur = args[indexInInput++];
+		if (cur == 32 || cur == 0) {
+			// if size of newArgs is too small doubles size
+			if (indexInArgs > newArgsSize - 1) {
+				newArgsSize *= 2;
+				newArgs = realloc(newArgs, newArgsSize);
+			}
+			newArgs[indexInArgs] = (char*)malloc(sizeof(char) * (strlen(buffer) + 2));
+			newArgs[indexInArgs++] = strdup(buffer);
+			indexInBuffer = 0;
+			if (cur == 0) break;
+			for (int i = 0; i < 128; *(buffer++) = 0, i++);
+		} else {
+			buffer[indexInBuffer++] = cur;
+		}
+	}
+	return newArgs;
 }
 
 void printCommandWithEnum(cmd c, int count) {
