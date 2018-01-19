@@ -2,4 +2,5 @@
 - accept input from arguments - half done need to implement it for user commands
 - statistics - Finito
 - move stats to separate file
-- fix how arguments are handled
+- move commands into a seperate file
+- fix how arguments are handled - Done
