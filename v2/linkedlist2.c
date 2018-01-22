@@ -19,10 +19,11 @@ cmd setupCommand(char* name, char* prompt, char* desc) {
 	c.args[0] = name;
 	c.prompt = prompt;
 	c.desc = desc;
+	c.isBckg = 0;
 	return c;
 }
 
-cmd setupUserCommand(char* name, char* prompt) {
+cmd setupUserCommand(char* name, char* prompt, int bckg) {
 	cmd c = getCommand();
 
 	char* args = name;
@@ -40,8 +41,11 @@ cmd setupUserCommand(char* name, char* prompt) {
 	c.args = parseArgString(args);
 	c.args[0] = strdup(c.name);
 	c.desc = "User added command: ";
+	c.isBckg = bckg;
 	return c;
 }
+
+
 
 char **parseArgString(char* args) {
 	// Goes through a string and puts every arg separated by spaces into its own place in a new char**
@@ -123,17 +127,43 @@ cmd getIthFromLL(ll* commands, int i) {
 }
 
 
-int addCmd(ll* commands, cmd command) {
+ll* addCmd(ll* commands, cmd command) {
+	if (commands == NULL) {
+		commands = getLL();
+		commands->cmd = command;
+		commands->next = NULL;
+		return commands;
+	}
 	if (commands->cmd.name == NULL) {
 		commands->cmd = command;
 	} else if (commands->next == NULL) {
 		commands->next = getLL();
 		commands->next->cmd = command;
-		return 0;
 	} else {
-		return addCmd(commands->next, command);
+		addCmd(commands->next, command);
 	}
-	return -1;
+	return NULL; // should never happen
+}
+
+// PID must be within commands
+ll* delPID(ll* commands, int pid) {
+	if (commands == NULL) {
+		// should never happen but blocks program from crashing
+		return commands;
+	}
+	if (commands->next != NULL) {
+		if (commands->next->cmd.pid == pid) {
+			commands->next = commands->next->next;
+			free(commands->next);
+			return commands;
+		}
+		delPID(commands->next, pid);
+	} else  {
+		commands = NULL;
+		return commands;
+	}
+	return NULL;
+
 }
 
 void printWithEnumHelper(ll* commands, int count) {

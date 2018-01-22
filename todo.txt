@@ -5,3 +5,6 @@
 - move commands into a seperate file
 - fix how arguments are handled - Done
 - accept input from stdin- apparently super easy :D
+
+-#background_processes.o: v2/background_processes.h v2/background_processes.c
+	#cc $(ARGS) -c v2/background_processes.c -lpthread

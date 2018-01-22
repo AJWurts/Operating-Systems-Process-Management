@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "linkedlist2.h"
+#include "linkedlist.h"
 
 typedef struct __stats {
 	long prev_ru_minflt;
