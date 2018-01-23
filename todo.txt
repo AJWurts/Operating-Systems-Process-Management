@@ -12,4 +12,4 @@
 	-from stdin - Done
 	-
 -README
--test files
+-test files - Finito

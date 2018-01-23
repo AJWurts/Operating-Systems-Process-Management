@@ -323,7 +323,6 @@ void loadInitialCommands(ll *commands) {
 
 // Waits for background processes
 ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
-	struct timeval *endTime = malloc(sizeof(struct timeval));
 	ll* c_cmd = bckgCmds; // Used to read down the list without changing bckgCmds
 	siginfo_t info;
 	// Waits for all running commands
@@ -334,21 +333,7 @@ ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
 		waitid(P_ALL, c_cmd->cmd.pid, &info, WEXITED | WNOHANG);
 
 		if (info.si_pid != 0) {
-			gettimeofday(endTime, NULL); // Stops Timer
-
-			// Calculates difference in time
-			long secs = endTime->tv_sec - c_cmd->cmd.startTime->tv_sec;
-			long usecs = 0;
-			long et_usec = endTime->tv_usec;
-			long st_usec = c_cmd->cmd.startTime->tv_usec;
-			if (et_usec < st_usec) {
-				usecs = (1000000 + et_usec) - st_usec;
-			} else {
-				usecs = et_usec - st_usec;
-			}
-			long milli = (secs * 100000) + (usecs);
-
-			cmdStats->time = milli;
+	
 
 			printf("--Job Complete --\n"); // Prints out job completion, ID and proces name
 			printf("Process ID: %d\n", (int)info.si_pid);
