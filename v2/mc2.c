@@ -5,25 +5,20 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <errno.h>
 
 #include "linkedlist2.h"
 
 
 // Struct used to hold information about stats
-typedef struct __stats {
-	long prev_ru_minflt;
-	long prev_ru_majflt;
-	long current_minflt;
-	long current_majflt;
-	struct timeval total_time;
-} stats;
+
 
 
 void loadInitialCommands(ll*); // Load initial commands and add them to commands list
 void printCharacterCommands(); // Print commands from commands list
-long runCommand(cmd, ll**); // Runs given command and uses ll* depending on if running in background
-ll* waitForBKP(ll*, stats*); // Waits for processes running in the background
-void printStats(stats*); // print stats from stats struct
+void runCommand(cmd, ll**); // Runs given command and uses ll* depending on if running in background
+//ll* waitForBKP(ll*, stats*); // Waits for processes running in the background
+void printStats(struct timeval *time); // print stats from stats struct
 
 int main(int argc, char* argv[]) {
 	// initialize commands and background commands
@@ -32,10 +27,6 @@ int main(int argc, char* argv[]) {
 
 	// load initial commands into commands list
 	loadInitialCommands(commands);
-
-	// Allocate and initialize command stats
-	stats *cmdStats = malloc(sizeof(stats));
-	cmdStats->prev_ru_minflt = 0; cmdStats->prev_ru_majflt = 0;
 
 	// Allocate and Initialize Input Buffer and Directory String
 	char* input = malloc(sizeof(char) * 130);
@@ -68,9 +59,8 @@ int main(int argc, char* argv[]) {
 			int i = atoi(input); // Turns input into int to find right command
 			cmd command = getIthFromLL(commands, i); // gets command
 
-			cmdStats->time = runCommand(command, &bckgCmds); // Runs command
-			if (!command.isBckg) // Prints stats if not background
-				printStats(cmdStats);
+			runCommand(command, &bckgCmds); // Runs command
+
 
 		} else {
 			switch (input[0]) {
@@ -162,25 +152,18 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-		bckgCmds = waitForBKP(bckgCmds, cmdStats);
+		//bckgCmds = waitForBKP(bckgCmds, cmdStats);
 	}
 
 	freeLL(commands);
 	freeLL(bckgCmds);
 	free(input);
 	free(directory);
-	free(cmdStats);
 	return 0;
 }
 
 // Runs given command and return time to run processes
-long runCommand(cmd command, ll** bckgCmds) {
-
-	struct timeval *startTime, *endTime;
-	startTime = malloc(sizeof(struct timeval));
-	endTime = malloc(sizeof(struct timeval));
-	long totalTime;
-
+void runCommand(cmd command, ll** bckgCmds) {
 
 	if (!strcmp(command.name, "ls")) { // Handles user input for ls command
 
@@ -228,47 +211,53 @@ long runCommand(cmd command, ll** bckgCmds) {
 		// Concat inputed args tp create command args.
 	}
 
-
+	
+	struct timeval start_time, end_time, sub;	
+	gettimeofday(&start_time, NULL);
 	int ret = fork();
 	if (ret < 0) {
 		fprintf(stderr, "fork failed\n");
 		exit(1);
 	} else if (ret == 0) {
-		// Prints prompt and runs command
-		printf("%s\n", command.prompt);
-		execvp(command.args[0], command.args);
+		
+		
+		if (command.isBckg) {
+			int ret2 = fork();
+			if (ret2 == 0) {
+				// Prints prompt and runs command
+				printf("%s\n", command.prompt);
+				execvp(command.args[0], command.args);
+			} else  if (command.isBckg) {
+				waitpid(ret2, 0, 0);
+				gettimeofday(&end_time, NULL);
+			
+				timersub(&start_time, &end_time, &sub);
+				printStats(&sub);
+			}
+		
+		} else {
+			// Prints prompt and runs command
+			printf("%s\n", command.prompt);
+			execvp(command.args[0], command.args);
+		{
 
+		
 	} else {
 		if (command.isBckg) { // Background Command
 			cmd temp = command;
 			temp.pid = ret;
-			temp.startTime = startTime;
+			
 			*bckgCmds = addCmd(*bckgCmds, temp);
 		} else { // Non-Background Command
-			waitpid(ret, NULL, 0); // Waits for returning process
-			gettimeofday(endTime, NULL); // Stops timer
-
-
-			// Calculates time difference between finish and start and returns long
-			long secs = endTime->tv_sec - startTime->tv_sec;
-			long usecs = 0;
-			long et_usec = endTime->tv_usec;
-			long st_usec = startTime->tv_usec;
-			if (et_usec < st_usec) {
-				usecs = (1000000 + et_usec) - st_usec;
-			} else {
-				usecs = et_usec - st_usec;
-			}
-			totalTime = (secs * 1000000) + (usecs);
-
+			waitpid(ret, 0, 0); // Waits for returning process
+			gettimeofday(&end_time, NULL);
+			timersub(&start_time, &end_time, &sub);
+			printStats(&sub);
 			printf("\n");
 		}
-
-
 	}
-
 }
-
+}
 // Prints character commands
 void printCharacterCommands() {
 	printf("   a. add command  : Adds a new command to the menu.\n");
@@ -279,29 +268,23 @@ void printCharacterCommands() {
 }
 
 // Prints stats for most recently run process
-void printStats(stats *cmdStats) {
-	struct rusage *usage;
+void printStats(struct timeval *time) {
+	struct rusage *usage = malloc(sizeof(struct rusage));
 	usage = malloc(sizeof(struct rusage));
 
-	getrusage(RUSAGE_CHILDREN, usage);
-	cmdStats->current_minflt = usage->ru_minflt - cmdStats->prev_ru_minflt;
-	cmdStats->current_majflt = usage->ru_majflt - cmdStats->prev_ru_majflt;
-
-	cmdStats->prev_ru_minflt += cmdStats->current_minflt;
-	cmdStats->prev_ru_majflt += cmdStats->current_majflt;
-
-	struct timeval sub;
-	timersub(rusage->ru_utime, cmdStats->totalTime, &sub);
-
-	cmdStats->totalTime.tv_secs = usage->ru_utime.tv_usecs;
+	if (getrusage(RUSAGE_CHILDREN, usage) != 0) {
+		printf("Error Could Not get usage: %d", errno);
+	} else {
 	
-	long milli = (sub.tv_sec * 1000) + (sub.tv_usec / 1000);
+		long milli = (time->tv_sec * 1000) + (time->tv_usec / 1000);
 
-	printf("\n--- Statistics ---\n");
-	printf("Elapsed time: %lu millisecond(s)\n", milli);
-	printf("Page Faults: %lu\n", cmdStats->current_majflt);
-	printf("Page Faults (reclaimed): %lu\n\n", cmdStats->current_minflt);
-	free(usage);
+		printf("\n--- Statistics ---\n");
+		printf("Elapsed time: %lu millisecond(s)\n", milli);
+		printf("Page Faults: %lu\n", usage->ru_majflt);
+);
+		printf("Page Faults (reclaimed): %lu\n\n", usage->ru_minflt);
+		free(usage);
+	}
 }
 
 // Adds inital commands to the commands ll
@@ -321,6 +304,7 @@ void loadInitialCommands(ll *commands) {
 
 }
 
+/*
 // Waits for background processes
 ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
 	ll* c_cmd = bckgCmds; // Used to read down the list without changing bckgCmds
@@ -348,6 +332,6 @@ ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
 		// Moves on to next background command
 		c_cmd = c_cmd->next;
 	}
-	free(endTime);
+	
 	return bckgCmds;
-}
+} */
