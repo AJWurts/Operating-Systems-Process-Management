@@ -37,15 +37,13 @@ cmd setupUserCommand(char* name, char* prompt, int bckg) {
 	}
 	*(name + i) = 0;
 	strcpy(c.name, name);
-	c.prompt = prompt;
+	c.prompt = strdup(prompt);
 	c.args = parseArgString(args);
 	c.args[0] = strdup(c.name);
 	c.desc = "User added command: ";
 	c.isBckg = bckg;
 	return c;
 }
-
-
 
 char **parseArgString(char* args) {
 	// Goes through a string and puts every arg separated by spaces into its own place in a new char**
@@ -79,7 +77,6 @@ char **parseArgString(char* args) {
 void printCommandWithEnum(cmd c, int count) {
 	printf("%d. %s\t: %s\n", count, c.name, c.desc);
 }
-
 
 int size(ll *linkedlist) {
 	int size = 0;
@@ -126,7 +123,6 @@ cmd getIthFromLL(ll* commands, int i) {
 	return getIthFromLLHelper(commands, i, 0);
 }
 
-
 ll* addCmd(ll* commands, cmd command) {
 	if (commands == NULL) {
 		commands = getLL();
@@ -142,23 +138,27 @@ ll* addCmd(ll* commands, cmd command) {
 	} else {
 		addCmd(commands->next, command);
 	}
-	return NULL; // should never happen
+	return commands; // happens quite often heh
 }
 
 // PID must be within commands
+// Empty list is denoted by NULL
 ll* delPID(ll* commands, int pid) {
 	if (commands == NULL) {
 		// should never happen but blocks program from crashing
 		return commands;
 	}
-	if (commands->next != NULL) {
+
+	if (commands->next != NULL) { // If next isn't null and pid equals cmd.pid deletes it
 		if (commands->next->cmd.pid == pid) {
 			commands->next = commands->next->next;
-			free(commands->next);
+
 			return commands;
 		}
 		delPID(commands->next, pid);
 	} else  {
+
+
 		commands = NULL;
 		return commands;
 	}
@@ -178,6 +178,19 @@ void printWithEnumeration(ll* commands) {
 	printWithEnumHelper(commands, 0);
 }
 
+void freeCommand(cmd command) {
+	free(command.name);
+	free(command.prompt);
+	free(command.desc);
+}
 
-
-
+void freeLL(ll* linkedlist) {
+	if (linkedlist != NULL) {
+		if (linkedlist->next != NULL) {
+			freeLL(linkedlist->next);
+		} else {
+			freeCommand(linkedlist->cmd);
+			free(linkedlist);
+		}
+	}
+}

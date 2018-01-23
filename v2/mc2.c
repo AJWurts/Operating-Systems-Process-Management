@@ -7,8 +7,9 @@
 #include <sys/resource.h>
 
 #include "linkedlist2.h"
-#include "background_processes.h"
 
+
+// Struct used to hold information about stats
 typedef struct __stats {
 	long prev_ru_minflt;
 	long prev_ru_majflt;
@@ -17,24 +18,30 @@ typedef struct __stats {
 	long time;
 } stats;
 
-void loadInitialCommands(ll*);
-void printCharacterCommands();
-long runCommand(cmd, ll*);
-ll* waitForBKP();
-void printStats(stats*);
+
+void loadInitialCommands(ll*); // Load initial commands and add them to commands list
+void printCharacterCommands(); // Print commands from commands list
+long runCommand(cmd, ll**); // Runs given command and uses ll* depending on if running in background
+ll* waitForBKP(ll*, stats*); // Waits for processes running in the background
+void printStats(stats*); // print stats from stats struct
 
 int main(int argc, char* argv[]) {
+	// initialize commands and background commands
 	ll *commands = getLL();
 	ll *bckgCmds = getLL();
 
+	// load initial commands into commands list
 	loadInitialCommands(commands);
+
+	// Allocate and initialize command stats
 	stats *cmdStats = malloc(sizeof(stats));
 	cmdStats->prev_ru_minflt = 0; cmdStats->prev_ru_majflt = 0;
+
+	// Allocate and Initialize Input Buffer and Directory String
 	char* input = malloc(sizeof(char) * 130);
 	char* directory = malloc(sizeof(char) * 128);
-	directory = argv[0];
-	argv[0][strlen(argv[0]-5)] = 0;
-	printf("%s", input);
+	directory = strdup(argv[0]); // Retrieves directory name from argv
+	directory[strlen(argv[0]) - 4] = 0; // Removes processes name from directory
 
 	while (1) {
 		// hard coded - a, c, e, pwd
@@ -47,30 +54,38 @@ int main(int argc, char* argv[]) {
 		printCharacterCommands();
 		printf("Option?: ");
 
-
+		// Get user input
 		char* done = fgets(input, sizeof input, stdin);
 		if (done == NULL) { // If no input assume user wants to quit program
 			input[0] = 'e';
 		}
 
 		printf("\n");
-
+		// Checks to see if input is a number or a character
+		// If its a number it looks for the corresponding command and runs it
+		// If its a character it assumes its a built in command
 		if (48 <= input[0] && input[0] <= 57) {
-			int i = atoi(input);
-			cmd command = getIthFromLL(commands, i);
-			cmdStats->time = runCommand(command, bckgCmds);
-			if (!command.isBckg)
+			int i = atoi(input); // Turns input into int to find right command
+			cmd command = getIthFromLL(commands, i); // gets command
+
+			cmdStats->time = runCommand(command, &bckgCmds); // Runs command
+			if (!command.isBckg) // Prints stats if not background
 				printStats(cmdStats);
+
 		} else {
 			switch (input[0]) {
-				case 'a': {
+				case 'a': { // Add Command Case
 					printf("-- Add a Command --\n");
 					printf("Command to add?: ");
-					scanf("%[^\n]%*c", input);
+					scanf("%[^\n]%*c", input); // Input command
+					char* name = strdup(input); // saves input to be saved as name for later
+
+
 					int isBckg = 0;
-					if (input[strlen(input) - 1] == '&'){
+					if (input[strlen(input) - 1] == '&'){ // Checks to see if background Command
 						isBckg = 1;
 						int i = strlen(input);
+						// While Loop to remove & and any whitespace after command
 						while ((int)input[i] == 38
 								||
 								!(33 <= (int)input[i] && (int)input[i] <= 126)) { //  while last character is not valid character
@@ -78,37 +93,56 @@ int main(int argc, char* argv[]) {
 							i--;
 						}
 					}
+
+					// creates command and adds it to command list
 					cmd temp = setupUserCommand(input, "User added command", isBckg);
+					temp.name = name;
 					addCmd(commands, temp);
 					printf("Okay, added with ID %d\n\n", size(commands) - 1);
 					break;
 				}
-				case 'c':
+				case 'c': // Change Working Directory
 					printf("-- Change Directory --\n");
 					printf("Enter new directory: ");
-					fgets(input, sizeof input, stdin);
-					input[strlen(input) - 1] = 0;
-					int ret = chdir(input);
+					fgets(input, sizeof(char) * 128, stdin); // New Directory Name
+					input[strlen(input) - 1] = 0; // Removes \n from end of input
+					int ret = chdir(input); // Changes directory
 					printf("\n");
-					if (ret == 0) {
+
+
+					if (ret == 0) { // If Succeeded
+
+						if (strstr(input, "..") && strlen(directory) > 4) { // If user entered .. to move out one folder
+							char *temp = directory;
+							temp += strlen(temp);
+							char c;
+							// While loop to find final / and set that place 0
+							while ((c = *(temp)) != '/')
+								temp--;
+							*temp = 0;
+
+						} else { // If user gave a normal file name saves it
+							directory = strdup(input);
+						}
 						printf("Directory Change Successful\n");
-					} else {
+
+					} else { // Failed to change directory
 						printf("Directory Change Failed\n");
 					}
 					printf("\n\n");
-					directory = strdup(input);
+
 					break;
-				case 'p': {
+				case 'p': { // Print Current Working Directory
 					printf("-- Current Directory --\nDirectory: ");
 					printf("%s\n\n", directory);
 					break;
 				}
-				case 'e': {
+				case 'e': { // Logout and exit program
 					printf("Logging you out, Commander.\n");
 					exit(0);
 					break;
 				}
-				case 'r': {
+				case 'r': { // Prints current running processes
 					ll* current = bckgCmds;
 					int i = 0;
 					printf("-- Background Processes --\n");
@@ -123,21 +157,24 @@ int main(int argc, char* argv[]) {
 					break;
 				}
 
-				default: {
+				default: { // Invalid Command
 					printf("Invalid command please try again\n\n");
-//					printf("%d", (int)input[0]);
 				}
-
 			}
 		}
 		bckgCmds = waitForBKP(bckgCmds, cmdStats);
 	}
 
-
+	freeLL(commands);
+	freeLL(bckgCmds);
+	free(input);
+	free(directory);
+	free(cmdStats);
 	return 0;
 }
 
-long runCommand(cmd command, ll* bckgCmds) {
+// Runs given command and return time to run processes
+long runCommand(cmd command, ll** bckgCmds) {
 
 	struct timeval *startTime, *endTime;
 	startTime = malloc(sizeof(struct timeval));
@@ -145,25 +182,34 @@ long runCommand(cmd command, ll* bckgCmds) {
 	long totalTime;
 
 
-	if (!strcmp(command.name, "ls")) {
+	if (!strcmp(command.name, "ls")) { // Handles user input for ls command
+
+		// Allocates Buffers
 		char *inputBuffer = malloc(sizeof(char) * 128);
 		char *argBuffer = malloc(sizeof(char) * 128);
 		printf("\n-- Directory Listing --\n");
+
+		// Gets user input from stdin for arguments
 		printf("Arguments?: ");
 		fgets(inputBuffer, sizeof inputBuffer, stdin);
 		if (*inputBuffer == '\n')
 			; //do nothing
 		else {
+			// Remove \n from end of input string
 			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+			// Appends to end of argbuffer for proper argument passing
 			strcat(argBuffer, inputBuffer);
 		}
 
+		// Get  user input for path
 		printf("Path?: ");
 		fgets(inputBuffer, sizeof inputBuffer, stdin);
 		if (*inputBuffer == '\n')
 				inputBuffer = NULL;
 		else {
+			// Remove \n from end
 			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+			// Add stuff to inputBuffer then transfers to argBuffer for condition check below
 			strcat(inputBuffer, " ");
 			strcat(inputBuffer, argBuffer);
 			free(argBuffer);
@@ -171,8 +217,10 @@ long runCommand(cmd command, ll* bckgCmds) {
 		}
 
 		if (inputBuffer != NULL || strlen(argBuffer) >= 2) {
+			// Parses arguments from string
 			command.args = parseArgString(argBuffer);
 		}
+		// Sets args[0] to command name for when processes executes
 		command.args[0] = strdup(command.name);
 
 		printf("\n\n");
@@ -181,24 +229,29 @@ long runCommand(cmd command, ll* bckgCmds) {
 	}
 
 
+	// Starts timer
 	gettimeofday(startTime, NULL);
 	int ret = fork();
 	if (ret < 0) {
 		fprintf(stderr, "fork failed\n");
 		exit(1);
 	} else if (ret == 0) {
+		// Prints prompt and runs command
 		printf("%s\n", command.prompt);
 		execvp(command.args[0], command.args);
 
 	} else {
-		if (command.isBckg) {
+		if (command.isBckg) { // Background Command
 			cmd temp = command;
 			temp.pid = ret;
 			temp.startTime = startTime;
-			bckgCmds = addCmd(bckgCmds, temp);
-		} else {
-			waitpid(ret, NULL, 0);
-			gettimeofday(endTime, NULL);
+			*bckgCmds = addCmd(*bckgCmds, temp);
+		} else { // Non-Background Command
+			waitpid(ret, NULL, 0); // Waits for returning process
+			gettimeofday(endTime, NULL); // Stops timer
+
+
+			// Calculates time difference between finish and start and returns long
 			long secs = endTime->tv_sec - startTime->tv_sec;
 			long usecs = 0;
 			long et_usec = endTime->tv_usec;
@@ -209,6 +262,7 @@ long runCommand(cmd command, ll* bckgCmds) {
 				usecs = et_usec - st_usec;
 			}
 			totalTime = (secs * 1000000) + (usecs);
+
 			printf("\n");
 		}
 
@@ -218,6 +272,7 @@ long runCommand(cmd command, ll* bckgCmds) {
 	return totalTime;
 }
 
+// Prints character commands
 void printCharacterCommands() {
 	printf("   a. add command  : Adds a new command to the menu.\n");
 	printf("   c. change directory : Changes process working directory\n");
@@ -226,6 +281,7 @@ void printCharacterCommands() {
 	printf("   r. running processes : Print list of running processes\n");
 }
 
+// Prints stats for most recently run process
 void printStats(stats *cmdStats) {
 	struct rusage *usage;
 	usage = malloc(sizeof(struct rusage));
@@ -244,6 +300,7 @@ void printStats(stats *cmdStats) {
 	free(usage);
 }
 
+// Adds inital commands to the commands ll
 void loadInitialCommands(ll *commands) {
 	cmd whoami = setupCommand("whoami", "-- Who am I? --",
 			"Prints out the result of the whoami command");
@@ -260,18 +317,22 @@ void loadInitialCommands(ll *commands) {
 
 }
 
+// Waits for background processes
 ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
-	/*int  waitid(idtype_t  idtype, id_t id, siginfo_t *infop,
-       int options);
-	 */
-	ll* c_cmd = bckgCmds;
+	struct timeval *endTime = malloc(sizeof(struct timeval));
+	ll* c_cmd = bckgCmds; // Used to read down the list without changing bckgCmds
 	siginfo_t info;
+	// Waits for all running commands
+	// If command is not already finished when this runs starts main program again
 	while (c_cmd != NULL){
-		info.si_pid = 0;
+		info.si_pid = 0; // Sets pid to zero to know if it waited for a process or not
+
 		waitid(P_ALL, c_cmd->cmd.pid, &info, WEXITED | WNOHANG);
+
 		if (info.si_pid != 0) {
-			struct timeval *endTime = malloc(sizeof(struct timeval));
-			gettimeofday(endTime, NULL);
+			gettimeofday(endTime, NULL); // Stops Timer
+
+			// Calculates difference in time
 			long secs = endTime->tv_sec - c_cmd->cmd.startTime->tv_sec;
 			long usecs = 0;
 			long et_usec = endTime->tv_usec;
@@ -281,22 +342,23 @@ ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
 			} else {
 				usecs = et_usec - st_usec;
 			}
-
-
 			long milli = (secs * 100000) + (usecs);
 
-
 			cmdStats->time = milli;
-			free(endTime);
-			printf("--Job Complete --\n");
-			printf("Process ID: %d\n", (int)info.si_pid);
-			printf("Command Name: %s\b", c_cmd->cmd.name);
-			printStats(cmdStats);
 
+			printf("--Job Complete --\n"); // Prints out job completion, ID and proces name
+			printf("Process ID: %d\n", (int)info.si_pid);
+			printf("Command Name: %s\n", c_cmd->cmd.name);
+			printStats(cmdStats); // Prints Stats
+
+			// Removes from background commands list
 			bckgCmds = delPID(bckgCmds, (int)info.si_pid);
 
 		}
+
+		// Moves on to next background command
 		c_cmd = c_cmd->next;
 	}
+	free(endTime);
 	return bckgCmds;
 }

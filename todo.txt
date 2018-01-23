@@ -1,10 +1,15 @@
-- Background commands
+- Background commands - Done
 - accept input from arguments - done
 - statistics - Finito
-- move stats to separate file
-- move commands into a seperate file
+- move stats to separate file - Not gonna happen
+- move commands into a seperate file - Tuesday
 - fix how arguments are handled - Done
 - accept input from stdin- apparently super easy :D
-
--#background_processes.o: v2/background_processes.h v2/background_processes.c
-	#cc $(ARGS) -c v2/background_processes.c -lpthread
+- Fix up mc1 fo have the same updates as mc2
+	-Changing and storing directory properly - Done
+	-ls correct input - Done
+	-timing
+	-from stdin - Done
+	-
+-README
+-test files

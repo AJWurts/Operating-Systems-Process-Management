@@ -8,8 +8,11 @@
 
 
 
+char **parseArgString(char* args);
+
 int main(int argc, char *argv[]) {
-	int input;
+	// Initialize and Allocate Variables
+
 	long totalTime, current_minflt, current_majflt;
 	long prev_ru_minflt = 0, prev_ru_majflt = 0;
 	struct timeval *startTime, *endTime;
@@ -17,9 +20,12 @@ int main(int argc, char *argv[]) {
 	startTime = malloc(sizeof(struct timeval));
 	endTime = malloc(sizeof(struct timeval));
 	usage = malloc(sizeof(struct rusage));
+	char* input = malloc(sizeof(char) * 128);
 
 
 	while (1) {
+
+		// Print commands and prompt user
 		printf("===== Mid-Day Commander, v0 =====");
 		printf("G'Day, Commander! What command would you like to run?\n");
 		printf("\t0. whoami\t Prints out the result of the whoami command\n");
@@ -27,12 +33,12 @@ int main(int argc, char *argv[]) {
 		printf("\t2. ls\t Prints out the result of a listing on a user-specifed path\n");
 		printf("Option?: ");
 	
-		scanf("%d", &input);
+		fgets(input, sizeof input, stdin);
 		printf("\n");
 
 
-
-		if (input == 0) {
+		// Command 0: whoami
+		if (*input == '0') {
 			gettimeofday(startTime, NULL);
 			int ret = fork();
 			if (ret < 0) {
@@ -46,11 +52,11 @@ int main(int argc, char *argv[]) {
 				execvp(args[0], args);
 
 			} else {
-				int whoami = wait(NULL);
+				wait(NULL);
 				gettimeofday(endTime, NULL);
 				totalTime = endTime->tv_usec - startTime->tv_usec;
 			}
-		} else if (input == 1) {
+		} else if (*input == '1') { // Command 1: last
 			gettimeofday(startTime, NULL);
 			int ret = fork();
 			if (ret < 0) {
@@ -63,24 +69,60 @@ int main(int argc, char *argv[]) {
 				printf("-- Last Logins --\n");
 				execvp(args[0], args);
 			} else {
-				int last = wait(NULL);
+				wait(NULL);
 				gettimeofday(endTime, NULL);
 				printf("\n");
 				totalTime = endTime->tv_usec - startTime->tv_usec;
 			}
 
-		} else if (input == 2) {
-			char *args[3];
-			args[2] = malloc(sizeof(char) * 100);
-			args[1] = malloc(sizeof(char) * 100);
-			args[0] = strdup("ls");
+		} else if (*input == '2') { // Command 2: ls
+
+			// Allocates Buffers
+			char *inputBuffer = malloc(sizeof(char) * 128);
+			char *argBuffer = malloc(sizeof(char) * 128);
+
 			printf("\n-- Directory Listing --\n");
+
+			// Gets user input from stdin for arguments
 			printf("Arguments?: ");
-			scanf("%s", args[1]);
+			fgets(inputBuffer, sizeof inputBuffer, stdin);
+			if (*inputBuffer == '\n')
+				; //do nothing
+			else {
+				// Remove \n from end of input string
+				*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+				// Appends to end of argbuffer for proper argument passing
+				strcat(argBuffer, inputBuffer);
+			}
+
+			// Get  user input for path
 			printf("Path?: ");
-			scanf("%s", args[2]);
+			fgets(inputBuffer, sizeof inputBuffer, stdin);
+			if (*inputBuffer == '\n')
+					inputBuffer = NULL;
+			else {
+				// Remove \n from end
+				*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+				// Add stuff to inputBuffer then transfers to argBuffer for condition check below
+				strcat(inputBuffer, " ");
+				strcat(inputBuffer, argBuffer);
+				free(argBuffer);
+				argBuffer = inputBuffer;
+			}
+			char** args = malloc(sizeof(char) * 2);
+			if (inputBuffer != NULL || strlen(argBuffer) >= 2) {
+				// Parses arguments from string
+				args = parseArgString(argBuffer);
+			} else {
+				args[1] = NULL;
+			}
+			// Sets args[0] to command name for when processes executes
+			args[0] = "ls";
+
+
 			printf("\n\n");
-			args[3] = NULL;
+			free(inputBuffer);
+			// Concat inputed args tp create command args.
 			int ret = fork();
 			if (ret < 0) {
 				fprintf(stderr, "fork failed\b");
@@ -90,12 +132,10 @@ int main(int argc, char *argv[]) {
 			} else {
 				wait(NULL);
 				gettimeofday(endTime, NULL);
-
 			}
 
-
 		} else {
-			printf("Invalid input. Please only type 0, 1, or 2.\n");
+			printf("Invalid input. Please only type the characters 0, 1, or 2.\n");
 		}
 		
 		// Statistics
@@ -116,4 +156,34 @@ int main(int argc, char *argv[]) {
 	}
 	
 	return 0;
+}
+
+
+char **parseArgString(char* args) {
+	// Goes through a string and puts every arg separated by spaces into its own place in a new char**
+	char **newArgs = (char**)malloc(sizeof(char*) * 20);
+	int newArgsSize = 20;
+	char cur;
+	char* buffer = malloc(sizeof(char*) * 128);
+	int indexInInput = 0;
+	int indexInBuffer = 0;
+	int indexInArgs = 1;
+	while (1) {
+		cur = args[indexInInput++];
+		if (cur == 32 || cur == 0) {
+			// if size of newArgs is too small doubles size
+			if (indexInArgs > newArgsSize - 1) {
+				newArgsSize *= 2;
+				newArgs = realloc(newArgs, newArgsSize);
+			}
+			newArgs[indexInArgs] = (char*)malloc(sizeof(char) * (strlen(buffer) + 2));
+			newArgs[indexInArgs++] = strdup(buffer);
+			indexInBuffer = 0;
+			if (cur == 0) break;
+			for (int i = 0; i < 128; *(buffer++) = 0, i++);
+		} else {
+			buffer[indexInBuffer++] = cur;
+		}
+	}
+	return newArgs;
 }

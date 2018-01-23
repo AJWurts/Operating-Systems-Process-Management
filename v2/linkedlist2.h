@@ -51,6 +51,9 @@ cmd getIthFromLL(ll* commands, int i);
 
 void printWithEnumeration(ll* commands);
 
+void freeCommand(cmd command);
+
+void freeLL(ll* linkedlist);
 
 
 #endif /* LINKED_LIST_H__ */

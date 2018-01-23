@@ -1,0 +1,9 @@
+a
+sleep 5 &
+3
+r
+a
+sleep 5
+4
+r
+e

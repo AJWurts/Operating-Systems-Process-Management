@@ -21,16 +21,22 @@ long runCommand(cmd);
 stats *printStats(stats*);
 
 int main(int argc, char* argv[]) {
+	// initialize commands
 	ll *commands = getLL();
 
+	// load initial commands into commands list
 	loadInitialCommands(commands);
+
+	// Allocate and initialize command stats
 	stats *cmdStats = malloc(sizeof(stats));
 	cmdStats->prev_ru_minflt = 0; cmdStats->prev_ru_majflt = 0;
+
+	// Allocate and Initialize Input Buffer and Directory String
 	char* input = malloc(sizeof(char) * 130);
 	char* directory = malloc(sizeof(char) * 128);
-	directory = argv[0];
-	argv[0][strlen(argv[0]-5)] = 0;
-	printf("%s", input);
+	directory = strdup(argv[0]); // Retrieves directory name from argv
+	directory[strlen(argv[0]) - 4] = 0; // Removes processes name from directory
+
 
 	while (1) {
 		// hard coded - a, c, e, pwd
@@ -70,9 +76,33 @@ int main(int argc, char* argv[]) {
 				case 'c':
 					printf("-- Change Directory --\n");
 					printf("Enter new directory: ");
-					scanf("%s", directory);
-					chdir(input);
+					fgets(input, sizeof(char) * 128, stdin); // New Directory Name
+					input[strlen(input) - 1] = 0; // Removes \n from end of input
+					int ret = chdir(input); // Changes directory
+					printf("\n");
+
+
+					if (ret == 0) { // If Succeeded
+
+						if (strstr(input, "..")) { // If user entered .. to move out one folder
+							char *temp = directory;
+							temp += strlen(temp);
+							char c;
+							// While loop to find final / and set that place 0
+							while ((c = *(temp)) != '/')
+								temp--;
+							*temp = 0;
+
+						} else { // If user gave a normal file name saves it
+							directory = strdup(input);
+						}
+						printf("Directory Change Successful\n");
+
+					} else { // Failed to change directory
+						printf("Directory Change Failed\n");
+					}
 					printf("\n\n");
+
 					break;
 				case 'p': {
 					printf("-- Current Directory --\nDirectory: ");
@@ -86,8 +116,7 @@ int main(int argc, char* argv[]) {
 				}
 
 				default: {
-					printf("Invalid command please try again\n\n");
-					printf("%d", (int)input[0]);
+					printf("Invalid command please try again.\n\n");
 				}
 
 			}
