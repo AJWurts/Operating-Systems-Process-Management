@@ -15,7 +15,7 @@ typedef struct __stats {
 	long prev_ru_majflt;
 	long current_minflt;
 	long current_majflt;
-	long time;
+	struct timeval total_time;
 } stats;
 
 
@@ -229,8 +229,6 @@ long runCommand(cmd command, ll** bckgCmds) {
 	}
 
 
-	// Starts timer
-	gettimeofday(startTime, NULL);
 	int ret = fork();
 	if (ret < 0) {
 		fprintf(stderr, "fork failed\n");
@@ -269,7 +267,6 @@ long runCommand(cmd command, ll** bckgCmds) {
 
 	}
 
-	return totalTime;
 }
 
 // Prints character commands
@@ -293,8 +290,15 @@ void printStats(stats *cmdStats) {
 	cmdStats->prev_ru_minflt += cmdStats->current_minflt;
 	cmdStats->prev_ru_majflt += cmdStats->current_majflt;
 
+	struct timeval sub;
+	timersub(rusage->ru_utime, cmdStats->totalTime, &sub);
+
+	cmdStats->totalTime.tv_secs = usage->ru_utime.tv_usecs;
+	
+	long milli = (sub.tv_sec * 1000) + (sub.tv_usec / 1000);
+
 	printf("\n--- Statistics ---\n");
-	printf("Elapsed time: %lu millisecond(s)\n", cmdStats->time / 1000);
+	printf("Elapsed time: %lu millisecond(s)\n", milli);
 	printf("Page Faults: %lu\n", cmdStats->current_majflt);
 	printf("Page Faults (reclaimed): %lu\n\n", cmdStats->current_minflt);
 	free(usage);
