@@ -37,7 +37,7 @@ char **parseArgString(char* args);
 
 ll* addCmd(ll* commands, cmd command);
 
-ll* delPID(ll* commands, int pid);
+ll* delCmd(ll* commands, cmd command);
 
 void printCommandWithEnum(cmd c, int count);
 

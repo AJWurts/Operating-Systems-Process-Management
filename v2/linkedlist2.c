@@ -144,6 +144,7 @@ ll* addCmd(ll* commands, cmd command) {
 // PID must be within commands
 // Empty list is denoted by NULL
 ll* delPID(ll* commands, int pid) {
+
 	if (commands == NULL) {
 		// should never happen but blocks program from crashing
 		return commands;
@@ -156,6 +157,30 @@ ll* delPID(ll* commands, int pid) {
 			return commands;
 		}
 		delPID(commands->next, pid);
+	} else  {
+
+
+		commands = NULL;
+		return commands;
+	}
+	return NULL;
+
+}
+
+ll* delCmd(ll* commands, cmd command) {
+
+	if (commands == NULL) {
+		// should never happen but blocks program from crashing
+		return commands;
+	}
+
+	if (commands->next != NULL) { // If next isn't null and pid equals cmd.pid deletes it
+		if (strcmp(commands->next->cmd.name, command.name)) {
+			commands->next = commands->next->next;
+
+			return commands;
+		}
+		delCmd(commands->next, command);
 	} else  {
 
 

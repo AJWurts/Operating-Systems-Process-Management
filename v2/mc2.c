@@ -16,14 +16,15 @@
 
 void loadInitialCommands(ll*); // Load initial commands and add them to commands list
 void printCharacterCommands(); // Print commands from commands list
-void runCommand(cmd, ll**); // Runs given command and uses ll* depending on if running in background
-//ll* waitForBKP(ll*, stats*); // Waits for processes running in the background
-void printStats(struct timeval *time); // print stats from stats struct
+ll* catchBackgroundProcesses(ll* bckgCmds, int *numBckgCmds); // Waits for processes running in the background
+void runCommand(cmd command, ll** bckgCmds, int *numBckgCmds);
+void printStats(struct timeval*);// print stats from stats struct
 
 int main(int argc, char* argv[]) {
 	// initialize commands and background commands
 	ll *commands = getLL();
 	ll *bckgCmds = getLL();
+	int numBckgCmds = 0;
 
 	// load initial commands into commands list
 	loadInitialCommands(commands);
@@ -59,7 +60,7 @@ int main(int argc, char* argv[]) {
 			int i = atoi(input); // Turns input into int to find right command
 			cmd command = getIthFromLL(commands, i); // gets command
 
-			runCommand(command, &bckgCmds); // Runs command
+			runCommand(command, &bckgCmds, &numBckgCmds); // Runs command
 
 
 		} else {
@@ -136,11 +137,8 @@ int main(int argc, char* argv[]) {
 					ll* current = bckgCmds;
 					int i = 0;
 					printf("-- Background Processes --\n");
-					while (current != NULL) {
-						if (current->cmd.pid != 0) // Needed for edge case when bckgCmds is 0;
-							printf("[%d]: PID: %d, Name: %s\n", i++,
-														   current->cmd.pid,
-														   current->cmd.name);
+					while (current != NULL && current->cmd.name != NULL) {
+							printf("[%d]: Name: %s\n", i++, current->cmd.name);
 						current = current->next;
 					}
 					printf("\n");
@@ -152,7 +150,7 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-		//bckgCmds = waitForBKP(bckgCmds, cmdStats);
+		bckgCmds = catchBackgroundProcesses(bckgCmds, &numBckgCmds);
 	}
 
 	freeLL(commands);
@@ -163,7 +161,7 @@ int main(int argc, char* argv[]) {
 }
 
 // Runs given command and return time to run processes
-void runCommand(cmd command, ll** bckgCmds) {
+void runCommand(cmd command, ll** bckgCmds, int *numBckgCmds) {
 
 	if (!strcmp(command.name, "ls")) { // Handles user input for ls command
 
@@ -212,52 +210,43 @@ void runCommand(cmd command, ll** bckgCmds) {
 	}
 
 	
-	struct timeval start_time, end_time, sub;	
+	struct timeval start_time, end_time, sub;
+
 	gettimeofday(&start_time, NULL);
 	int ret = fork();
 	if (ret < 0) {
 		fprintf(stderr, "fork failed\n");
 		exit(1);
 	} else if (ret == 0) {
-		
-		
-		if (command.isBckg) {
-			int ret2 = fork();
-			if (ret2 == 0) {
-				// Prints prompt and runs command
-				printf("%s\n", command.prompt);
-				execvp(command.args[0], command.args);
-			} else  if (command.isBckg) {
-				waitpid(ret2, 0, 0);
-				gettimeofday(&end_time, NULL);
-			
-				timersub(&start_time, &end_time, &sub);
-				printStats(&sub);
-			}
-		
-		} else {
+
+		int ret2 = fork();
+		if (ret2 == 0) {
 			// Prints prompt and runs command
 			printf("%s\n", command.prompt);
 			execvp(command.args[0], command.args);
-		{
-
-		
-	} else {
-		if (command.isBckg) { // Background Command
-			cmd temp = command;
-			temp.pid = ret;
-			
-			*bckgCmds = addCmd(*bckgCmds, temp);
-		} else { // Non-Background Command
-			waitpid(ret, 0, 0); // Waits for returning process
+		} else {
+			waitpid(ret2, 0, 0);
 			gettimeofday(&end_time, NULL);
-			timersub(&start_time, &end_time, &sub);
+
+			if (command.isBckg == 1) {
+				printf("-- Job Complete [%d]--\n", *numBckgCmds);
+				printf("Process ID: %d\n", ret2);
+				printf("[%d] %d\n", *numBckgCmds, ret2);
+
+			}
+			timersub(&end_time, &start_time, &sub);
 			printStats(&sub);
-			printf("\n");
+
 		}
+		exit(ret2);
+	} else if (command.isBckg != 1) {
+		waitpid(ret, 0, 0); // Waits for returning process
+	} else {
+		(*numBckgCmds)++;
+		*bckgCmds = addCmd(*bckgCmds, command);
 	}
 }
-}
+
 // Prints character commands
 void printCharacterCommands() {
 	printf("   a. add command  : Adds a new command to the menu.\n");
@@ -281,7 +270,6 @@ void printStats(struct timeval *time) {
 		printf("\n--- Statistics ---\n");
 		printf("Elapsed time: %lu millisecond(s)\n", milli);
 		printf("Page Faults: %lu\n", usage->ru_majflt);
-);
 		printf("Page Faults (reclaimed): %lu\n\n", usage->ru_minflt);
 		free(usage);
 	}
@@ -304,9 +292,9 @@ void loadInitialCommands(ll *commands) {
 
 }
 
-/*
+
 // Waits for background processes
-ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
+ll* catchBackgroundProcesses(ll* bckgCmds, int *numBckgCmds) {
 	ll* c_cmd = bckgCmds; // Used to read down the list without changing bckgCmds
 	siginfo_t info;
 	// Waits for all running commands
@@ -317,15 +305,9 @@ ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
 		waitid(P_ALL, c_cmd->cmd.pid, &info, WEXITED | WNOHANG);
 
 		if (info.si_pid != 0) {
-	
 
-			printf("--Job Complete --\n"); // Prints out job completion, ID and proces name
-			printf("Process ID: %d\n", (int)info.si_pid);
-			printf("Command Name: %s\n", c_cmd->cmd.name);
-			printStats(cmdStats); // Prints Stats
-
-			// Removes from background commands list
-			bckgCmds = delPID(bckgCmds, (int)info.si_pid);
+			bckgCmds = delCmd(bckgCmds, c_cmd->cmd);
+			(*numBckgCmds)--;
 
 		}
 
@@ -334,4 +316,4 @@ ll* waitForBKP(ll* bckgCmds, stats* cmdStats) {
 	}
 	
 	return bckgCmds;
-} */
+}
