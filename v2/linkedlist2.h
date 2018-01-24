@@ -31,7 +31,7 @@ cmd getCommand(void);
 
 cmd setupCommand(char* name, char* prompt, char* desc);
 
-cmd setupUserCommand(char* name, char* prompt, int isBckg);
+cmd setupUserCommand(char*);
 
 char **parseArgString(char* args);
 

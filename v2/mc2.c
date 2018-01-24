@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
 	directory[strlen(argv[0]) - 4] = 0; // Removes processes name from directory
 
 	while (1) {
+		bckgCmds = catchBackgroundProcesses(bckgCmds, &numBckgCmds);
 		// hard coded - a, c, e, pwd
 		// part of commmands 0, 1, 2, ...
 
@@ -69,25 +70,10 @@ int main(int argc, char* argv[]) {
 					printf("-- Add a Command --\n");
 					printf("Command to add?: ");
 					scanf("%[^\n]%*c", input); // Input command
-					char* name = strdup(input); // saves input to be saved as name for later
-
-
-					int isBckg = 0;
-					if (input[strlen(input) - 1] == '&'){ // Checks to see if background Command
-						isBckg = 1;
-						int i = strlen(input);
-						// While Loop to remove & and any whitespace after command
-						while ((int)input[i] == 38
-								||
-								!(33 <= (int)input[i] && (int)input[i] <= 126)) { //  while last character is not valid character
-							input[i] = '\0'; // set character to 0
-							i--;
-						}
-					}
 
 					// creates command and adds it to command list
-					cmd temp = setupUserCommand(input, "User added command", isBckg);
-					temp.name = name;
+					cmd temp = setupUserCommand(input);
+//					temp.name = name;
 					addCmd(commands, temp);
 					printf("Okay, added with ID %d\n\n", size(commands) - 1);
 					break;
@@ -150,7 +136,7 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-		bckgCmds = catchBackgroundProcesses(bckgCmds, &numBckgCmds);
+
 	}
 
 	freeLL(commands);

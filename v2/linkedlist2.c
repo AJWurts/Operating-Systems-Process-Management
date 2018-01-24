@@ -23,10 +23,32 @@ cmd setupCommand(char* name, char* prompt, char* desc) {
 	return c;
 }
 
-cmd setupUserCommand(char* name, char* prompt, int bckg) {
+cmd setupUserCommand(char *input) {
 	cmd c = getCommand();
+	char * constructor = malloc(sizeof(char) * (40 + strlen(input)));
+	strcpy(constructor, "-- Command: ");
+	strcat(constructor, input);
+	strcat(constructor, " --");
 
-	char* args = name;
+	char* name = strdup(input); // saves input to be saved as name for later
+
+
+	// Removes whitespace before '&'
+	int isBckg = 0;
+	if (input[strlen(input) - 1] == '&'){ // Checks to see if background Command
+		isBckg = 1;
+		int i = strlen(input);
+		// While Loop to remove & and any whitespace after command
+		while ((int)input[i] == 38
+				||
+				!(33 <= (int)input[i] && (int)input[i] <= 126)) { //  while last character is not valid character
+			input[i] = '\0'; // set character to 0
+			i--;
+		}
+	}
+
+	// Remove program name from args list
+	char* args = input;
 	int i = 0;
 	while (args++ != NULL) {
 		i++;
@@ -35,13 +57,15 @@ cmd setupUserCommand(char* name, char* prompt, int bckg) {
 			break;
 		}
 	}
+
+	//*(name + i) = 0;
+	c.name = strdup(name);
 	*(name + i) = 0;
-	strcpy(c.name, name);
-	c.prompt = strdup(prompt);
-	c.args = parseArgString(args);
-	c.args[0] = strdup(c.name);
-	c.desc = "User added command: ";
-	c.isBckg = bckg;
+	c.prompt = constructor;
+	c.args = parseArgString(args); // Parse args into seperate items of array
+	c.args[0] = strdup(name);
+	c.desc = "User added command";
+	c.isBckg = isBckg;
 	return c;
 }
 

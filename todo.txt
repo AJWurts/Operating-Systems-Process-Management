@@ -10,6 +10,7 @@
 	-ls correct input - Done
 	-timing
 	-from stdin - Done
-	-
+	-Fix timing by implementing mc2.c update
 -README
 -test files - Finito
+-BOTH mc1 mc2 fix description
