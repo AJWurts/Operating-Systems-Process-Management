@@ -17,8 +17,7 @@ linkedlist.o: v1/linkedlist.h v1/linkedlist.c
 	cc $(ARGS) -c v1/linkedlist.c
 	
 
-
 clean:
-	rm -f *.o mc0 mc1 mc2 linkedlist.o linkedlist2.o
+	rm -f *.o mc0 mc1 mc2 linkedlist.o linkedlist2.o v2/linkedlist2.h.gch v1/linkedlist.h.gch
 	
 all: mc0 mc1 mc2

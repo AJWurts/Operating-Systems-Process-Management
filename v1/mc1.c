@@ -1,3 +1,8 @@
+// mc1.c
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
@@ -5,20 +10,15 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <errno.h>
 
 #include "linkedlist.h"
 
-typedef struct __stats {
-	long prev_ru_minflt;
-	long prev_ru_majflt;
-	long current_minflt;
-	long current_majflt;
-	long time;
-} stats;
+
 int loadInitialCommands(ll*);
 void printCharacterCommands();
-long runCommand(cmd);
-stats *printStats(stats*);
+void runCommand(cmd);
+void printStats(struct timeval*);
 
 int main(int argc, char* argv[]) {
 	// initialize commands
@@ -26,10 +26,6 @@ int main(int argc, char* argv[]) {
 
 	// load initial commands into commands list
 	loadInitialCommands(commands);
-
-	// Allocate and initialize command stats
-	stats *cmdStats = malloc(sizeof(stats));
-	cmdStats->prev_ru_minflt = 0; cmdStats->prev_ru_majflt = 0;
 
 	// Allocate and Initialize Input Buffer and Directory String
 	char* input = malloc(sizeof(char) * 130);
@@ -60,15 +56,15 @@ int main(int argc, char* argv[]) {
 		if (48 <= input[0] && input[0] <= 57) {
 			int i = atoi(input);
 			cmd command = getIthFromLL(commands, i);
-			cmdStats->time = runCommand(command);
-			cmdStats = printStats(cmdStats);
+			runCommand(command);
+
 		} else {
 			switch (input[0]) {
 				case 'a': {
 					printf("-- Add a Command --\n");
 					printf("Command to add?: ");
 					scanf("%[^\n]%*c", input);
-					cmd temp = setupUserCommand(input, "User added command");
+					cmd temp = setupUserCommand(input);
 					addCmd(commands, temp);
 					printf("Okay, added with ID %d\n\n", size(commands) - 1);
 					break;
@@ -84,7 +80,7 @@ int main(int argc, char* argv[]) {
 
 					if (ret == 0) { // If Succeeded
 
-						if (strstr(input, "..")) { // If user entered .. to move out one folder
+						if (strstr(input, "..") && strlen(directory) > 4) { // If user entered .. to move out one folder
 							char *temp = directory;
 							temp += strlen(temp);
 							char c;
@@ -102,6 +98,7 @@ int main(int argc, char* argv[]) {
 						printf("Directory Change Failed\n");
 					}
 					printf("\n\n");
+
 
 					break;
 				case 'p': {
@@ -125,65 +122,82 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-long runCommand(cmd command) {
+void runCommand(cmd command) {
 
-	struct timeval *startTime, *endTime;
-	startTime = malloc(sizeof(struct timeval));
-	endTime = malloc(sizeof(struct timeval));
-	long totalTime;
+	if (!strcmp(command.name, "ls")) { // Handles user input for ls command
 
+			// Allocates Buffers
+			char *inputBuffer = malloc(sizeof(char) * 128);
+			char *argBuffer = malloc(sizeof(char) * 128);
+			printf("\n-- Directory Listing --\n");
 
-	if (!strcmp(command.name, "ls")) {
-		char *inputBuffer = malloc(sizeof(char) * 128);
-		char *argBuffer = malloc(sizeof(char) * 128);
-		printf("\n-- Directory Listing --\n");
-		printf("Arguments?: ");
-		fgets(inputBuffer, sizeof inputBuffer, stdin);
-		if (*inputBuffer == '\n')
-			; //do nothing
-		else {
-			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
-			strcat(argBuffer, inputBuffer);
+			// Gets user input from stdin for arguments
+			printf("Arguments?: ");
+			fgets(inputBuffer, sizeof inputBuffer, stdin);
+			if (*inputBuffer == '\n')
+				; //do nothing
+			else {
+				// Remove \n from end of input string
+				*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+				// Appends to end of argbuffer for proper argument passing
+				strcat(argBuffer, inputBuffer);
+			}
+
+			// Get  user input for path
+			printf("Path?: ");
+			fgets(inputBuffer, sizeof inputBuffer, stdin);
+			if (*inputBuffer == '\n')
+					inputBuffer = NULL;
+			else {
+				// Remove \n from end
+				*(inputBuffer + strlen(inputBuffer) - 1) = 0;
+				// Add stuff to inputBuffer then transfers to argBuffer for condition check below
+				if (*argBuffer != '\0')
+					strcat(inputBuffer, " ");
+				strcat(inputBuffer, argBuffer);
+				free(argBuffer);
+				argBuffer = inputBuffer;
+			}
+
+			if (inputBuffer != NULL || strlen(argBuffer) >= 2) {
+				// Parses arguments from string
+				command.args = parseArgString(argBuffer);
+			}
+			// Sets args[0] to command name for when processes executes
+			command.args[0] = strdup(command.name);
+
+			printf("\n\n");
+			free(inputBuffer);
+			// Concat inputed args tp create command args.
 		}
 
-		printf("Path?: ");
-		fgets(inputBuffer, sizeof inputBuffer, stdin);
-		if (*inputBuffer == '\n')
-				inputBuffer = NULL;
-		else {
-			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
-			strcat(inputBuffer, " ");
-			strcat(inputBuffer, argBuffer);
-			free(argBuffer);
-			argBuffer = inputBuffer;
-		}
 
-		if (inputBuffer != NULL) {
-			command.args = parseArgString(argBuffer);
-		}
-		command.args[0] = strdup(command.name);
-		//"%[^\n]%*c"
-		printf("\n\n");
-		free(inputBuffer);
-		// Concat inputed args tp create command args.
-	}
+		struct timeval start_time, end_time, sub;
 
-	gettimeofday(startTime, NULL);
-	int ret = fork();
-	if (ret < 0) {
-		fprintf(stderr, "fork failed\n");
-		exit(1);
-	} else if (ret == 0) {
-		printf("%s\n", command.prompt);
-		execvp(command.args[0], command.args);
-	} else {
-		wait(NULL);
-		gettimeofday(endTime, NULL);
-		printf("\n");
-		totalTime = endTime->tv_usec - startTime->tv_usec;
-	}
+		gettimeofday(&start_time, NULL);
+		int ret = fork();
+		if (ret < 0) {
+			fprintf(stderr, "fork failed\n");
+			exit(1);
+		} else if (ret == 0) {
 
-	return totalTime;
+			int ret2 = fork();
+			if (ret2 == 0) {
+				// Prints prompt and runs command
+				printf("%s\n", command.prompt);
+				execvp(command.args[0], command.args);
+			} else {
+				waitpid(ret2, 0, 0);
+				gettimeofday(&end_time, NULL);
+
+				timersub(&end_time, &start_time, &sub);
+				printStats(&sub);
+
+			}
+			exit(ret2);
+		} else
+			waitpid(ret, 0, 0); // Waits for returning process
+
 }
 
 void printCharacterCommands() {
@@ -193,23 +207,22 @@ void printCharacterCommands() {
 	printf("   p. pwd : Prints working directory\n");
 }
 
-stats *printStats(stats *cmdStats) {
-	struct rusage *usage;
-	usage = malloc(sizeof(struct rusage));
+void printStats(struct timeval *time) {
+	struct rusage *usage = malloc(sizeof(struct rusage));
+		usage = malloc(sizeof(struct rusage));
 
-	getrusage(RUSAGE_CHILDREN, usage);
-	cmdStats->current_minflt = usage->ru_minflt - cmdStats->prev_ru_minflt;
-	cmdStats->current_majflt = usage->ru_majflt - cmdStats->prev_ru_majflt;
+		if (getrusage(RUSAGE_CHILDREN, usage) != 0) {
+			printf("Error Could Not get usage: %d", errno);
+		} else {
 
-	cmdStats->prev_ru_minflt += cmdStats->current_minflt;
-	cmdStats->prev_ru_majflt += cmdStats->current_majflt;
+			long milli = (time->tv_sec * 1000) + (time->tv_usec / 1000);
 
-	printf("\n--- Statistics ---\n");
-	printf("Elapsed time: %lu millisecond(s)\n", cmdStats->time / 1000);
-	printf("Page Faults: %lu\n", cmdStats->current_majflt);
-	printf("Page Faults (reclaimed): %lu\n\n", cmdStats->current_minflt);
-	free(usage);
-	return cmdStats;
+			printf("\n--- Statistics ---\n");
+			printf("Elapsed time: %lu millisecond(s)\n", milli);
+			printf("Page Faults: %lu\n", usage->ru_majflt);
+			printf("Page Faults (reclaimed): %lu\n\n", usage->ru_minflt);
+			free(usage);
+		}
 }
 
 int loadInitialCommands(ll *commands) {

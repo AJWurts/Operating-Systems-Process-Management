@@ -1,3 +1,8 @@
+// linkedlist.c
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include "linkedlist.h"
 #include <stdlib.h>
 #include <string.h>
@@ -21,10 +26,18 @@ cmd setupCommand(char* name, char* prompt, char* desc) {
 	return c;
 }
 
-cmd setupUserCommand(char* name, char* prompt) {
-	cmd c = getCommand();
+cmd setupUserCommand(char* input) {
 
-	char* args = name;
+	cmd c = getCommand();
+	char * constructor = malloc(sizeof(char) * (40 + strlen(input)));
+	strcpy(constructor, "-- Command: ");
+	strcat(constructor, input);
+	strcat(constructor, " --");
+
+	char* name = strdup(input); // saves input to be saved as name for later
+
+	// Remove program name from args list
+	char* args = input;
 	int i = 0;
 	while (args++ != NULL) {
 		i++;
@@ -33,12 +46,14 @@ cmd setupUserCommand(char* name, char* prompt) {
 			break;
 		}
 	}
+
+	//*(name + i) = 0;
+	c.name = strdup(name);
 	*(name + i) = 0;
-	strcpy(c.name, name);
-	c.prompt = prompt;
-	c.args = parseArgString(args);
-	c.args[0] = strdup(c.name);
-	c.desc = "User added command: ";
+	c.prompt = constructor;
+	c.args = parseArgString(args); // Parse args into seperate items of array
+	c.args[0] = strdup(name);
+	c.desc = "User added command";
 	return c;
 }
 

@@ -1,3 +1,8 @@
+// linkedlist2.h
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,12 +18,8 @@ struct command {
 	char** args;
 	char* prompt;
 	char* desc;
-	int pid;
 	int isBckg;
-	struct timeval *startTime;
 };
-
-
 
 struct linkedlist {
 	ll *next;

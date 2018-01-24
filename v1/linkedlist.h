@@ -1,3 +1,8 @@
+// linkedlist.h
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +33,7 @@ cmd getCommand(void);
 
 cmd setupCommand(char* name, char* prompt, char* desc);
 
-cmd setupUserCommand(char* name, char* prompt);
+cmd setupUserCommand(char*);
 
 char **parseArgString(char* args);
 

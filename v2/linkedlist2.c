@@ -1,8 +1,15 @@
+// linkiedlist2.c
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include "linkedlist2.h"
 
 #include <stdlib.h>
 #include <string.h>
 
+
+// Returns an allocated command
 cmd getCommand(void) {
 	cmd c;
 	c.name = malloc(sizeof(char) * 128);
@@ -13,6 +20,7 @@ cmd getCommand(void) {
 	return c;
 }
 
+// Setup a command given name, prompt and desc.
 cmd setupCommand(char* name, char* prompt, char* desc) {
 	cmd c = getCommand();
 	c.name = name;
@@ -23,8 +31,11 @@ cmd setupCommand(char* name, char* prompt, char* desc) {
 	return c;
 }
 
+// Sets up a user command given an input string
 cmd setupUserCommand(char *input) {
 	cmd c = getCommand();
+
+	// Constructs Prompt for when process runs
 	char * constructor = malloc(sizeof(char) * (40 + strlen(input)));
 	strcpy(constructor, "-- Command: ");
 	strcat(constructor, input);
@@ -33,7 +44,7 @@ cmd setupUserCommand(char *input) {
 	char* name = strdup(input); // saves input to be saved as name for later
 
 
-	// Removes whitespace before '&'
+	// Handles if process is a background process
 	int isBckg = 0;
 	if (input[strlen(input) - 1] == '&'){ // Checks to see if background Command
 		isBckg = 1;
@@ -69,6 +80,7 @@ cmd setupUserCommand(char *input) {
 	return c;
 }
 
+// Parses the argument input string
 char **parseArgString(char* args) {
 	// Goes through a string and puts every arg separated by spaces into its own place in a new char**
 	char **newArgs = (char**)malloc(sizeof(char*) * 20);
@@ -102,6 +114,7 @@ void printCommandWithEnum(cmd c, int count) {
 	printf("%d. %s\t: %s\n", count, c.name, c.desc);
 }
 
+// Counts members of the linked list and returns int size
 int size(ll *linkedlist) {
 	int size = 0;
 	ll *current = linkedlist;
@@ -112,11 +125,13 @@ int size(ll *linkedlist) {
 	return size;
 }
 
+// Returns an allocated linked list
 ll *getLL() {
 	ll *linkedlist = malloc(sizeof(ll));
 	return linkedlist;
 }
 
+// Gets command with the given name from the  LInked List
 cmd getFromLL(ll* commands, char* name) {
 	if (commands != NULL) {
 		int temp = strcmp(commands->cmd.name, name);
@@ -130,6 +145,7 @@ cmd getFromLL(ll* commands, char* name) {
 	return c;
 }
 
+// Get ith elemenet helper
 cmd getIthFromLLHelper(ll* commands, int i, int count) {
 	if (commands != NULL) {
 		if (i == count) {
@@ -143,54 +159,33 @@ cmd getIthFromLLHelper(ll* commands, int i, int count) {
 
 }
 
+// Gets the ith element from a linked list
 cmd getIthFromLL(ll* commands, int i) {
 	return getIthFromLLHelper(commands, i, 0);
 }
 
+
+// Adds a command to the end of the linked list
 ll* addCmd(ll* commands, cmd command) {
-	if (commands == NULL) {
+	if (commands == NULL) { // If linked list is empty
 		commands = getLL();
 		commands->cmd = command;
 		commands->next = NULL;
 		return commands;
 	}
-	if (commands->cmd.name == NULL) {
+	if (commands->cmd.name == NULL) { // If command is empty
 		commands->cmd = command;
-	} else if (commands->next == NULL) {
+	} else if (commands->next == NULL) { // If next item is empty
 		commands->next = getLL();
 		commands->next->cmd = command;
-	} else {
+	} else { // None of the above so check next node
 		addCmd(commands->next, command);
 	}
 	return commands; // happens quite often heh
 }
 
-// PID must be within commands
-// Empty list is denoted by NULL
-ll* delPID(ll* commands, int pid) {
 
-	if (commands == NULL) {
-		// should never happen but blocks program from crashing
-		return commands;
-	}
-
-	if (commands->next != NULL) { // If next isn't null and pid equals cmd.pid deletes it
-		if (commands->next->cmd.pid == pid) {
-			commands->next = commands->next->next;
-
-			return commands;
-		}
-		delPID(commands->next, pid);
-	} else  {
-
-
-		commands = NULL;
-		return commands;
-	}
-	return NULL;
-
-}
-
+// Removes a command with the same name from the list
 ll* delCmd(ll* commands, cmd command) {
 
 	if (commands == NULL) {
@@ -198,7 +193,7 @@ ll* delCmd(ll* commands, cmd command) {
 		return commands;
 	}
 
-	if (commands->next != NULL) { // If next isn't null and pid equals cmd.pid deletes it
+	if (commands->next != NULL) { // If next isn't null and name equals cmd.name deletes it
 		if (strcmp(commands->next->cmd.name, command.name)) {
 			commands->next = commands->next->next;
 
@@ -215,6 +210,7 @@ ll* delCmd(ll* commands, cmd command) {
 
 }
 
+// Print linked list with number helper
 void printWithEnumHelper(ll* commands, int count) {
 	if (commands != NULL) {
 			printf("   ");
@@ -223,16 +219,19 @@ void printWithEnumHelper(ll* commands, int count) {
 	}
 }
 
+// Print Linked List with numbers
 void printWithEnumeration(ll* commands) {
 	printWithEnumHelper(commands, 0);
 }
 
+// Free a command hopefully without crashing
 void freeCommand(cmd command) {
 	free(command.name);
 	free(command.prompt);
 	free(command.desc);
 }
 
+// Free LinkedList
 void freeLL(ll* linkedlist) {
 	if (linkedlist != NULL) {
 		if (linkedlist->next != NULL) {

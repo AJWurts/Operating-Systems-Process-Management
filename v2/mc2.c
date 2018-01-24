@@ -1,3 +1,8 @@
+// mc2.c
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
@@ -8,11 +13,6 @@
 #include <errno.h>
 
 #include "linkedlist2.h"
-
-
-// Struct used to hold information about stats
-
-
 
 void loadInitialCommands(ll*); // Load initial commands and add them to commands list
 void printCharacterCommands(); // Print commands from commands list
@@ -35,13 +35,13 @@ int main(int argc, char* argv[]) {
 	directory = strdup(argv[0]); // Retrieves directory name from argv
 	directory[strlen(argv[0]) - 4] = 0; // Removes processes name from directory
 
-	while (1) {
+	while (1) { // Starts main program loop
 		bckgCmds = catchBackgroundProcesses(bckgCmds, &numBckgCmds);
 		// hard coded - a, c, e, pwd
 		// part of commmands 0, 1, 2, ...
 
 		// Print current commands:
-		printf("===== Mid-Day Commander, v1 =====\n");
+		printf("===== Mid-Day Commander, v2 =====\n");
 		printf("G'Day, Commander! What command would you like to run?\n");
 		printWithEnumeration(commands);
 		printCharacterCommands();
@@ -89,6 +89,7 @@ int main(int argc, char* argv[]) {
 
 					if (ret == 0) { // If Succeeded
 
+						// Capable of handling .. to backout one directory
 						if (strstr(input, "..") && strlen(directory) > 4) { // If user entered .. to move out one folder
 							char *temp = directory;
 							temp += strlen(temp);
@@ -177,7 +178,8 @@ void runCommand(cmd command, ll** bckgCmds, int *numBckgCmds) {
 			// Remove \n from end
 			*(inputBuffer + strlen(inputBuffer) - 1) = 0;
 			// Add stuff to inputBuffer then transfers to argBuffer for condition check below
-			strcat(inputBuffer, " ");
+			if (*argBuffer != '\0')
+				strcat(inputBuffer, " ");
 			strcat(inputBuffer, argBuffer);
 			free(argBuffer);
 			argBuffer = inputBuffer;
@@ -195,7 +197,37 @@ void runCommand(cmd command, ll** bckgCmds, int *numBckgCmds) {
 		// Concat inputed args tp create command args.
 	}
 
+	/*
+	 * Example Forking for every process
+	 * Simplified Code Explanation for below
+
+		int ret = fork();
+
+		if (ret == 0) {
+			// Child Process
+			int ret2 = fork();
+
+			if (ret2 == 0) {
+				// Grandchild Process
+				run process;
+			} else {
+				wait for grandchild process
+				print statistics
+			}
+
+			exit(1); // Exit child process when done handling grandchild
+
+		} else if (not background process) {
+			wait for child to finish and then continue main program
+
+		} else { // Assumes process is background process
+			// does not wait for child process to finish
+			adds to list of background commands
+		}
 	
+	 */
+
+
 	struct timeval start_time, end_time, sub;
 
 	gettimeofday(&start_time, NULL);
@@ -207,8 +239,7 @@ void runCommand(cmd command, ll** bckgCmds, int *numBckgCmds) {
 
 		int ret2 = fork();
 		if (ret2 == 0) {
-			// Prints prompt and runs command
-			printf("%s\n", command.prompt);
+			printf("%s\n", command.prompt);// Prints prompt and runs command
 			execvp(command.args[0], command.args);
 		} else {
 			waitpid(ret2, 0, 0);
@@ -247,17 +278,18 @@ void printStats(struct timeval *time) {
 	struct rusage *usage = malloc(sizeof(struct rusage));
 	usage = malloc(sizeof(struct rusage));
 
-	if (getrusage(RUSAGE_CHILDREN, usage) != 0) {
+	if (getrusage(RUSAGE_CHILDREN, usage) != 0) { // Get usage and check if retrieved properly
 		printf("Error Could Not get usage: %d", errno);
 	} else {
 	
-		long milli = (time->tv_sec * 1000) + (time->tv_usec / 1000);
+		long milli = (time->tv_sec * 1000) + (time->tv_usec / 1000); // Calculates total time
 
+		// Prints data
 		printf("\n--- Statistics ---\n");
 		printf("Elapsed time: %lu millisecond(s)\n", milli);
 		printf("Page Faults: %lu\n", usage->ru_majflt);
 		printf("Page Faults (reclaimed): %lu\n\n", usage->ru_minflt);
-		free(usage);
+		free(usage); // frees usage struct
 	}
 }
 
@@ -288,7 +320,7 @@ ll* catchBackgroundProcesses(ll* bckgCmds, int *numBckgCmds) {
 	while (c_cmd != NULL){
 		info.si_pid = 0; // Sets pid to zero to know if it waited for a process or not
 
-		waitid(P_ALL, c_cmd->cmd.pid, &info, WEXITED | WNOHANG);
+		waitid(P_ALL, 0, &info, WEXITED | WNOHANG);
 
 		if (info.si_pid != 0) {
 

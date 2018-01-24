@@ -1,0 +1,158 @@
+===== Mid-Day Commander, v2 =====
+G'Day, Commander! What command would you like to run?
+   0. whoami	: Prints out the result of the whoami command
+   1. last	: Prints out the result of the last command
+   2. ls	: Prints out the result of a listing on a user-specified path
+   a. add command  : Adds a new command to the menu.
+   c. change directory : Changes process working directory
+   e. exit : Leave Mid-Day Commander
+   p. pwd : Prints working directory
+   r. running processes : Print list of running processes
+Option?: 
+
+-- Directory Listing --
+Arguments?: Path?: 
+
+-- Directory Listing --
+linkedlist2.o  linkedlist.o  makefile  mc1  mc2  Readme.txt  test_file_outputs.txt  test_input	todo.txt  v0  v1  v2
+
+--- Statistics ---
+Elapsed time: 1 millisecond(s)
+Page Faults: 0
+Page Faults (reclaimed): 110
+
+===== Mid-Day Commander, v2 =====
+G'Day, Commander! What command would you like to run?
+   0. whoami	: Prints out the result of the whoami command
+   1. last	: Prints out the result of the last command
+   2. ls	: Prints out the result of a listing on a user-specified path
+   a. add command  : Adds a new command to the menu.
+   c. change directory : Changes process working directory
+   e. exit : Leave Mid-Day Commander
+   p. pwd : Prints working directory
+   r. running processes : Print list of running processes
+Option?: 
+
+-- Directory Listing --
+Arguments?: Path?: 
+
+-- Directory Listing --
+total 132
+-rw-rw-r-- 1 student 13608 Jan 24 14:23 linkedlist2.o
+-rw-rw-r-- 1 student 10664 Jan 24 14:24 linkedlist.o
+-rw-rw-r-- 1 student   527 Jan 24 14:24 makefile
+-rwxrwxr-x 1 student 26104 Jan 24 14:24 mc1
+-rwxrwxr-x 1 student 28448 Jan 24 14:23 mc2
+-rw-rw-r-- 1 student  8875 Jan 24 14:03 Readme.txt
+-rw-rw-r-- 1 student  8408 Jan 24 14:22 test_file_outputs.txt
+drwxrwxr-x 3 student  4096 Jan 24 14:25 test_input
+-rw-rw-r-- 1 student   524 Jan 24 11:52 todo.txt
+drwxrwxr-x 2 student  4096 Jan 19 00:59 v0
+drwxrwxr-x 2 student  4096 Jan 19 17:38 v1
+drwxrwxr-x 2 student  4096 Jan 24 14:23 v2
+
+--- Statistics ---
+Elapsed time: 1 millisecond(s)
+Page Faults: 0
+Page Faults (reclaimed): 149
+
+===== Mid-Day Commander, v2 =====
+G'Day, Commander! What command would you like to run?
+   0. whoami	: Prints out the result of the whoami command
+   1. last	: Prints out the result of the last command
+   2. ls	: Prints out the result of a listing on a user-specified path
+   a. add command  : Adds a new command to the menu.
+   c. change directory : Changes process working directory
+   e. exit : Leave Mid-Day Commander
+   p. pwd : Prints working directory
+   r. running processes : Print list of running processes
+Option?: 
+
+-- Directory Listing --
+Arguments?: Path?: 
+
+-- Directory Listing --
+total 160
+drwxrwxr-x 8 student  4096 Jan 24 14:25 .
+drwxr-xr-x 9 student  4096 Jan 18 14:03 ..
+-rw-rw-r-- 1 student  4614 Jan 24 14:25 .cproject
+drwxrwxr-x 8 student  4096 Jan 24 14:30 .git
+-rw-rw-r-- 1 student 13608 Jan 24 14:23 linkedlist2.o
+-rw-rw-r-- 1 student 10664 Jan 24 14:24 linkedlist.o
+-rw-rw-r-- 1 student   527 Jan 24 14:24 makefile
+-rwxrwxr-x 1 student 26104 Jan 24 14:24 mc1
+-rwxrwxr-x 1 student 28448 Jan 24 14:23 mc2
+-rw-rw-r-- 1 student   809 Jan 16 13:05 .project
+-rw-rw-r-- 1 student  8875 Jan 24 14:03 Readme.txt
+drwxrwxr-x 2 student  4096 Jan 16 13:05 .settings
+-rw-rw-r-- 1 student  8408 Jan 24 14:22 test_file_outputs.txt
+drwxrwxr-x 3 student  4096 Jan 24 14:25 test_input
+-rw-rw-r-- 1 student   524 Jan 24 11:52 todo.txt
+drwxrwxr-x 2 student  4096 Jan 19 00:59 v0
+drwxrwxr-x 2 student  4096 Jan 19 17:38 v1
+drwxrwxr-x 2 student  4096 Jan 24 14:23 v2
+
+--- Statistics ---
+Elapsed time: 1 millisecond(s)
+Page Faults: 0
+Page Faults (reclaimed): 146
+
+===== Mid-Day Commander, v2 =====
+G'Day, Commander! What command would you like to run?
+   0. whoami	: Prints out the result of the whoami command
+   1. last	: Prints out the result of the last command
+   2. ls	: Prints out the result of a listing on a user-specified path
+   a. add command  : Adds a new command to the menu.
+   c. change directory : Changes process working directory
+   e. exit : Leave Mid-Day Commander
+   p. pwd : Prints working directory
+   r. running processes : Print list of running processes
+Option?: 
+
+-- Directory Listing --
+Arguments?: Path?: 
+
+-- Directory Listing --
+student
+
+--- Statistics ---
+Elapsed time: 0 millisecond(s)
+Page Faults: 0
+Page Faults (reclaimed): 108
+
+===== Mid-Day Commander, v2 =====
+G'Day, Commander! What command would you like to run?
+   0. whoami	: Prints out the result of the whoami command
+   1. last	: Prints out the result of the last command
+   2. ls	: Prints out the result of a listing on a user-specified path
+   a. add command  : Adds a new command to the menu.
+   c. change directory : Changes process working directory
+   e. exit : Leave Mid-Day Commander
+   p. pwd : Prints working directory
+   r. running processes : Print list of running processes
+Option?: 
+
+-- Directory Listing --
+Arguments?: Path?: 
+
+-- Directory Listing --
+total 4
+drwxr-xr-x 24 student 4096 Jan 23 16:41 student
+
+--- Statistics ---
+Elapsed time: 1 millisecond(s)
+Page Faults: 0
+Page Faults (reclaimed): 146
+
+===== Mid-Day Commander, v2 =====
+G'Day, Commander! What command would you like to run?
+   0. whoami	: Prints out the result of the whoami command
+   1. last	: Prints out the result of the last command
+   2. ls	: Prints out the result of a listing on a user-specified path
+   a. add command  : Adds a new command to the menu.
+   c. change directory : Changes process working directory
+   e. exit : Leave Mid-Day Commander
+   p. pwd : Prints working directory
+   r. running processes : Print list of running processes
+Option?: 
+Logging you out, Commander.

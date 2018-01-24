@@ -1,0 +1,12 @@
+a
+sleep 1 &
+a
+sleep 3
+r
+3
+r
+3
+r
+4
+r
+e

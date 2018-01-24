@@ -1,3 +1,8 @@
+// mc0.c
+// by Alexander Wurts
+// January 2018
+// For class CS3013 Project 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
